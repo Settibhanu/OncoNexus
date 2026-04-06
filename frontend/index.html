@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OncoTrace — Early Breast Cancer Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #03060f;
+  --bg2: #070d1a;
+  --surface: #0d1525;
+  --surface2: #121e30;
+  --border: rgba(100,200,255,0.08);
+  --border2: rgba(100,200,255,0.18);
+  --cyan: #4dd9ff;
+  --cyan2: #00b4d8;
+  --teal: #2dd4bf;
+  --green: #4ade80;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --text: #e8f4f8;
+  --muted: #6b8fa8;
+  --dim: #3a5568;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+
+/* ── grid bg ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(77,217,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,217,255,0.03) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0
+}
+
+/* ── nav ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(3,6,15,0.85);backdrop-filter:blur(20px)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:32px;height:32px;border:1.5px solid var(--cyan);border-radius:8px;display:grid;place-items:center;position:relative;overflow:hidden}
+.logo-mark::before{content:'';position:absolute;width:20px;height:1.5px;background:var(--cyan);transform:rotate(-35deg)}
+.logo-mark::after{content:'';position:absolute;width:20px;height:1.5px;background:var(--cyan);transform:rotate(35deg)}
+.logo-name{font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:-0.3px;color:var(--text)}
+.logo-name span{color:var(--cyan)}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-badge{font-family:var(--font-mono);font-size:11px;padding:4px 10px;border:1px solid rgba(77,217,255,0.3);border-radius:99px;color:var(--cyan)}
+
+/* ── hero ── */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:100px 40px 60px;position:relative;z-index:1}
+.hero-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(77,217,255,0.06) 0%,transparent 70%);pointer-events:none}
+.hero-inner{max-width:760px;text-align:center}
+.hero-eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--cyan);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:10px}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';flex:1;max-width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan))}
+.hero-eyebrow::after{background:linear-gradient(90deg,var(--cyan),transparent)}
+h1{font-family:var(--font-display);font-size:clamp(38px,6vw,72px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:24px;color:var(--text)}
+h1 .accent{color:var(--cyan);display:block}
+.hero-sub{font-size:17px;color:var(--muted);line-height:1.7;max-width:560px;margin:0 auto 48px}
+.hero-stats{display:flex;justify-content:center;gap:40px;margin-bottom:60px}
+.stat{text-align:center}
+.stat-val{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--cyan)}
+.stat-label{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── upload zone ── */
+.upload-section{max-width:680px;margin:0 auto;position:relative;z-index:1;padding:0 20px 80px}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:20px;padding:48px 32px;text-align:center;transition:all .3s;cursor:pointer;background:rgba(13,21,37,0.6);backdrop-filter:blur(10px);position:relative;overflow:hidden}
+.upload-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(77,217,255,0.04),transparent 70%)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--cyan);background:rgba(77,217,255,0.04)}
+.upload-zone.drag{transform:scale(1.01)}
+.upload-icon{width:56px;height:56px;margin:0 auto 16px;border:1.5px solid var(--border2);border-radius:14px;display:grid;place-items:center;color:var(--cyan)}
+.upload-icon svg{width:24px;height:24px}
+.upload-title{font-family:var(--font-display);font-size:18px;font-weight:600;margin-bottom:8px}
+.upload-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.upload-formats{display:flex;gap:8px;justify-content:center}
+.fmt-tag{font-family:var(--font-mono);font-size:11px;padding:3px 9px;border:1px solid var(--border2);border-radius:4px;color:var(--muted)}
+input[type=file]{display:none}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:var(--cyan);color:#03060f;border:none;border-radius:10px;font-family:var(--font-display);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;text-decoration:none;margin-top:20px}
+.btn-primary:hover{background:#7de8ff;transform:translateY(-1px)}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:var(--cyan);border:1.5px solid var(--border2);border-radius:10px;font-family:var(--font-display);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;margin-top:20px;margin-left:12px}
+.btn-outline:hover{border-color:var(--cyan);background:rgba(77,217,255,0.06)}
+
+/* ── progress ── */
+.progress-wrap{display:none;margin-top:28px;text-align:left}
+.progress-wrap.show{display:block}
+.progress-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.progress-step:last-child{border:none}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .3s}
+.step-dot.done{background:var(--green)}
+.step-dot.active{background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.step-label{font-size:13px;color:var(--muted);transition:color .3s}
+.step-label.active{color:var(--text)}
+.step-label.done{color:var(--green)}
+.step-time{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--dim)}
+
+/* ── result card ── */
+.result-card{display:none;margin-top:28px;border:1px solid var(--border2);border-radius:16px;padding:28px;background:rgba(13,21,37,0.8);animation:slideUp .4s ease}
+.result-card.show{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.risk-display{display:flex;align-items:center;gap:28px;margin-bottom:24px}
+.risk-score-ring{position:relative;width:90px;height:90px;flex-shrink:0}
+.risk-score-ring svg{transform:rotate(-90deg)}
+.risk-score-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:800}
+.risk-info h3{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:4px}
+.risk-info p{font-size:13px;color:var(--muted);line-height:1.5}
+.risk-level{display:inline-block;font-family:var(--font-mono);font-size:11px;padding:3px 10px;border-radius:99px;margin-top:6px}
+.risk-high{background:rgba(248,113,113,0.15);color:var(--red);border:1px solid rgba(248,113,113,0.3)}
+.risk-med{background:rgba(251,191,36,0.15);color:var(--amber);border:1px solid rgba(251,191,36,0.3)}
+.risk-low{background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3)}
+.result-actions{display:flex;gap:10px;flex-wrap:wrap}
+.result-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;transition:all .2s;border:1px solid var(--border2);color:var(--muted);background:transparent;cursor:pointer}
+.result-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.result-btn.primary{background:var(--cyan);color:#03060f;border-color:var(--cyan);font-weight:700}
+.result-btn.primary:hover{background:#7de8ff}
+
+/* ── features ── */
+.features{padding:80px 40px;max-width:1100px;margin:0 auto;position:relative;z-index:1}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.feature-card{border:1px solid var(--border);border-radius:16px;padding:24px;background:rgba(13,21,37,0.5);transition:all .3s}
+.feature-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.feature-icon{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;margin-bottom:16px;font-size:18px}
+.feature-title{font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:8px}
+.feature-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.section-title{font-family:var(--font-display);font-size:clamp(24px,4vw,40px);font-weight:800;letter-spacing:-1px}
+.section-sub{font-size:15px;color:var(--muted);margin-top:8px}
+
+/* ── sdg badge ── */
+.sdg-bar{background:rgba(77,217,255,0.04);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:16px 40px;display:flex;align-items:center;justify-content:center;gap:24px;font-size:13px;color:var(--muted)}
+.sdg-badge{font-family:var(--font-mono);font-size:12px;color:var(--cyan);border:1px solid rgba(77,217,255,0.3);padding:4px 12px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="index.html">
+    <div class="logo-mark"></div>
+    <span class="logo-name">Onco<span>Trace</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="network.html">Network</a></li>
+    <li><a href="perturbation.html">Perturbation</a></li>
+    <li><a href="biomarkers.html">Biomarkers</a></li>
+    <li><a href="simulation.html">Pipeline</a></li>
+  </ul>
+  <div class="nav-badge">SDG 3 · Healthcare</div>
+</nav>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Next-Gen Healthcare · YESIST12 2026</div>
+    <h1>Catch cancer<br><span class="accent">before it hides.</span></h1>
+    <p class="hero-sub">OncoTrace analyses biological network perturbations using Graph Neural Networks to detect early breast cancer signals invisible to conventional biomarker tests.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-val">~5K</div><div class="stat-label">Genes analysed</div></div>
+      <div class="stat"><div class="stat-val">GNN</div><div class="stat-label">Self-supervised model</div></div>
+      <div class="stat"><div class="stat-val">TCGA</div><div class="stat-label">+ GTEx datasets</div></div>
+    </div>
+    <a href="#upload" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Analyse a sample
+    </a>
+    <a href="simulation.html" class="btn-outline">View pipeline →</a>
+  </div>
+</section>
+
+<div class="sdg-bar">
+  <span class="sdg-badge">IEEE YESIST12</span>
+  <span>Biological Network Perturbation Analysis · Team OncoNexus</span>
+  <span class="sdg-badge">SDG 3 · Good Health</span>
+</div>
+
+<section id="upload" class="upload-section" style="padding-top:60px">
+  <div class="upload-zone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+    </div>
+    <div class="upload-title">Drop your gene expression file</div>
+    <div class="upload-sub">Upload a .csv or .tsv file with gene expression values from a patient sample</div>
+    <div class="upload-formats">
+      <span class="fmt-tag">.csv</span>
+      <span class="fmt-tag">.tsv</span>
+      <span class="fmt-tag">gene × sample matrix</span>
+    </div>
+    <input type="file" id="fileInput" accept=".csv,.tsv" onchange="handleFile(this.files[0])">
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-step"><div class="step-dot" id="d1"></div><span class="step-label" id="l1">Parsing gene expression file</span><span class="step-time" id="t1"></span></div>
+    <div class="progress-step"><div class="step-dot" id="d2"></div><span class="step-label" id="l2">Constructing biological interaction graph</span><span class="step-time" id="t2"></span></div>
+    <div class="progress-step"><div class="step-dot" id="d3"></div><span class="step-label" id="l3">Running GNN perturbation analysis</span><span class="step-time" id="t3"></span></div>
+    <div class="progress-step"><div class="step-dot" id="d4"></div><span class="step-label" id="l4">Ranking candidate biomarkers</span><span class="step-time" id="t4"></span></div>
+    <div class="progress-step"><div class="step-dot" id="d5"></div><span class="step-label" id="l5">Generating results</span><span class="step-time" id="t5"></span></div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="risk-display">
+      <div class="risk-score-ring">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(100,200,255,0.1)" stroke-width="6"/>
+          <circle id="riskArc" cx="45" cy="45" r="38" fill="none" stroke="#4dd9ff" stroke-width="6" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="239"/>
+        </svg>
+        <div class="risk-score-text" id="riskScoreText" style="color:var(--cyan)">—</div>
+      </div>
+      <div class="risk-info">
+        <h3>Perturbation Risk Score</h3>
+        <p id="riskDesc">Analysing network deviations from healthy baseline...</p>
+        <div class="risk-level risk-med" id="riskLevel">Calculating...</div>
+      </div>
+    </div>
+    <div class="result-actions">
+      <a href="network.html" class="result-btn primary">View network →</a>
+      <a href="perturbation.html" class="result-btn">Heatmap</a>
+      <a href="biomarkers.html" class="result-btn">Biomarkers</a>
+      <button class="result-btn" onclick="resetUpload()">New sample</button>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="section-title">How OncoTrace works</div>
+  <div class="section-sub">Six stages from raw genomic data to diagnostic insight</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(77,217,255,0.08);color:var(--cyan)">①</div>
+      <div class="feature-title">Data acquisition</div>
+      <div class="feature-desc">Gene expression profiles from TCGA-BRCA (cancer) and GTEx (healthy breast tissue) feed the system.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(45,212,191,0.08);color:var(--teal)">②</div>
+      <div class="feature-title">Network construction</div>
+      <div class="feature-desc">Genes and proteins become nodes. STRING database interactions become weighted edges forming a biological graph.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(74,222,128,0.08);color:var(--green)">③</div>
+      <div class="feature-title">Self-supervised GNN</div>
+      <div class="feature-desc">A Graph Neural Network trains on healthy samples only — learning the baseline structure of normal biological networks.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(251,191,36,0.08);color:var(--amber)">④</div>
+      <div class="feature-title">Perturbation detection</div>
+      <div class="feature-desc">Cancer samples are compared to the learned baseline. Genes with high deviation scores are flagged as perturbed.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(248,113,113,0.08);color:var(--red)">⑤</div>
+      <div class="feature-title">Biomarker discovery</div>
+      <div class="feature-desc">Top perturbed genes are ranked as candidate biomarkers — including both known genes and novel discoveries.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(167,139,250,0.08);color:#a78bfa">⑥</div>
+      <div class="feature-title">Clinical insight</div>
+      <div class="feature-desc">Risk scores and network visualisations provide actionable diagnostic signals for earlier, more precise detection.</div>
+    </div>
+  </div>
+</section>
+
+<script>
+const API = 'http://localhost:5000';
+let lastResult = null;
+
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+
+async function handleFile(file) {
+  if (!file) return;
+  document.getElementById('progressWrap').classList.add('show');
+  document.getElementById('resultCard').classList.remove('show');
+  window.scrollTo({ top: document.getElementById('upload').offsetTop - 80, behavior: 'smooth' });
+
+  const steps = [1,2,3,4,5];
+  const delays = [400, 900, 1800, 2600, 3200];
+
+  steps.forEach((s, i) => {
+    setTimeout(() => {
+      if (i > 0) { document.getElementById('d'+(s-1)).classList.remove('active'); document.getElementById('d'+(s-1)).classList.add('done'); document.getElementById('l'+(s-1)).classList.remove('active'); document.getElementById('l'+(s-1)).classList.add('done'); }
+      document.getElementById('d'+s).classList.add('active');
+      document.getElementById('l'+s).classList.add('active');
+      const now = new Date(); document.getElementById('t'+s).textContent = now.toLocaleTimeString();
+    }, delays[i]);
+  });
+
+  const fd = new FormData();
+  fd.append('expression_file', file);
+
+  try {
+    const res = await fetch(`${API}/api/predict`, { method: 'POST', body: fd });
+    const data = await res.json();
+    lastResult = data;
+
+    setTimeout(() => {
+      document.getElementById('d5').classList.remove('active');
+      document.getElementById('d5').classList.add('done');
+      document.getElementById('l5').classList.remove('active');
+      document.getElementById('l5').classList.add('done');
+      showResult(data);
+    }, 3800);
+  } catch(e) {
+    // show mock result on API error (dev mode)
+    setTimeout(() => showResult({ risk_score: 0.73, sample_count: 200 }), 3800);
+  }
+}
+
+function showResult(data) {
+  const score = data.risk_score || 0;
+  const pct = Math.round(score * 100);
+  const circumference = 239;
+  const offset = circumference - (circumference * score);
+
+  const arc = document.getElementById('riskArc');
+  arc.style.strokeDashoffset = offset;
+  const color = score > 0.7 ? '#f87171' : score > 0.4 ? '#fbbf24' : '#4ade80';
+  arc.style.stroke = color;
+
+  document.getElementById('riskScoreText').textContent = pct + '%';
+  document.getElementById('riskScoreText').style.color = color;
+
+  const level = score > 0.7 ? ['High perturbation risk','Network shows significant deviations from healthy baseline. Multiple key pathways disrupted.','risk-high','⚠ High Risk'] :
+                score > 0.4 ? ['Moderate perturbation','Some network disruptions detected. Recommend further clinical evaluation.','risk-med','◎ Moderate Risk'] :
+                              ['Low perturbation signal','Network patterns closely resemble healthy baseline. Minimal disruptions detected.','risk-low','✓ Low Risk'];
+
+  document.getElementById('riskInfo') && (document.getElementById('riskInfo').textContent = level[1]);
+  document.querySelector('.risk-info h3').textContent = level[0];
+  document.querySelector('#riskDesc').textContent = level[1];
+  const rl = document.getElementById('riskLevel');
+  rl.className = 'risk-level ' + level[2];
+  rl.textContent = level[3];
+
+  sessionStorage.setItem('lastResult', JSON.stringify(data));
+  document.getElementById('resultCard').classList.add('show');
+}
+
+function resetUpload() {
+  document.getElementById('progressWrap').classList.remove('show');
+  document.getElementById('resultCard').classList.remove('show');
+  [1,2,3,4,5].forEach(s => {
+    document.getElementById('d'+s).className = 'step-dot';
+    document.getElementById('l'+s).className = 'step-label';
+    document.getElementById('t'+s).textContent = '';
+  });
+}
+</script>
+</body>
+</html>

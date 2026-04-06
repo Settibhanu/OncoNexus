@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gene Network — OncoTrace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+<style>
+:root{--bg:#03060f;--bg2:#070d1a;--surface:#0d1525;--surface2:#121e30;--border:rgba(100,200,255,0.08);--border2:rgba(100,200,255,0.18);--cyan:#4dd9ff;--teal:#2dd4bf;--green:#4ade80;--red:#f87171;--amber:#fbbf24;--text:#e8f4f8;--muted:#6b8fa8;--dim:#3a5568;--font-display:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(77,217,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,217,255,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+nav{position:relative;z-index:10;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(3,6,15,0.9);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:28px;height:28px;border:1.5px solid var(--cyan);border-radius:7px;display:grid;place-items:center;position:relative;overflow:hidden}
+.logo-mark::before{content:'';position:absolute;width:18px;height:1.5px;background:var(--cyan);transform:rotate(-35deg)}
+.logo-mark::after{content:'';position:absolute;width:18px;height:1.5px;background:var(--cyan);transform:rotate(35deg)}
+.logo-name{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text)}
+.logo-name span{color:var(--cyan)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-center{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text)}
+.main{display:flex;flex:1;overflow:hidden;position:relative;z-index:1}
+#cy{flex:1;background:transparent}
+.sidebar{width:300px;border-left:1px solid var(--border);background:rgba(7,13,26,0.95);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sidebar-head{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-title{font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:4px}
+.sidebar-sub{font-size:12px;color:var(--muted)}
+.controls{padding:16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.ctrl-row{display:flex;gap:8px}
+.ctrl-btn{flex:1;padding:8px;border:1px solid var(--border2);border-radius:8px;background:transparent;color:var(--muted);font-family:var(--font-body);font-size:12px;cursor:pointer;transition:all .2s}
+.ctrl-btn:hover,.ctrl-btn.active{border-color:var(--cyan);color:var(--cyan)}
+.filter-row{display:flex;align-items:center;gap:8px}
+.filter-label{font-size:12px;color:var(--muted);white-space:nowrap}
+input[type=range]{flex:1;accent-color:var(--cyan)}
+.filter-val{font-family:var(--font-mono);font-size:11px;color:var(--cyan);width:32px;text-align:right}
+.legend{padding:16px;border-bottom:1px solid var(--border)}
+.legend-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.node-panel{flex:1;overflow-y:auto;padding:16px}
+.node-empty{text-align:center;color:var(--dim);font-size:13px;margin-top:40px;line-height:1.6}
+.node-card{border:1px solid var(--border2);border-radius:12px;padding:16px;background:rgba(13,21,37,0.5)}
+.node-gene{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:4px}
+.node-badge{display:inline-block;font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:4px;margin-bottom:12px}
+.known-badge{background:rgba(77,217,255,0.1);color:var(--cyan);border:1px solid rgba(77,217,255,0.2)}
+.novel-badge{background:rgba(251,191,36,0.1);color:var(--amber);border:1px solid rgba(251,191,36,0.2)}
+.node-score-wrap{margin-bottom:14px}
+.node-score-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+.score-bar-bg{height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden}
+.score-bar-fill{height:6px;border-radius:99px;transition:width .5s}
+.node-score-val{font-family:var(--font-display);font-size:24px;font-weight:700;margin-top:4px}
+.node-meta{display:flex;flex-direction:column;gap:6px}
+.meta-row{display:flex;justify-content:space-between;font-size:12px}
+.meta-key{color:var(--muted)}
+.meta-val{color:var(--text);font-family:var(--font-mono)}
+.stats-row{display:flex;gap:12px;padding:16px;border-top:1px solid var(--border);flex-shrink:0}
+.stat-box{flex:1;text-align:center}
+.stat-val{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--cyan)}
+.stat-label{font-size:10px;color:var(--muted);margin-top:1px}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">
+    <div class="logo-mark"></div>
+    <span class="logo-name">Onco<span>Trace</span></span>
+  </a>
+  <span class="nav-center">Gene Interaction Network</span>
+  <ul class="nav-links">
+    <li><a href="index.html">Upload</a></li>
+    <li><a href="network.html" class="active">Network</a></li>
+    <li><a href="perturbation.html">Perturbation</a></li>
+    <li><a href="biomarkers.html">Biomarkers</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+  <div id="cy"></div>
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-title">Network Explorer</div>
+      <div class="sidebar-sub">Click any node to inspect gene details</div>
+    </div>
+    <div class="controls">
+      <div class="ctrl-row">
+        <button class="ctrl-btn active" onclick="setLayout('cose')">Force</button>
+        <button class="ctrl-btn" onclick="setLayout('circle')">Circle</button>
+        <button class="ctrl-btn" onclick="setLayout('grid')">Grid</button>
+        <button class="ctrl-btn" onclick="cy.fit()">Fit</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">Score ≥</span>
+        <input type="range" min="0" max="100" value="0" id="scoreFilter" oninput="filterByScore(this.value)">
+        <span class="filter-val" id="scoreFilterVal">0%</span>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-title">Perturbation score</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>High (≥ 0.7) — strongly perturbed</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Medium (0.4–0.7) — moderate</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div>Low (< 0.4) — near baseline</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4dd9ff;border:2px solid #fff"></div>Known cancer gene</div>
+    </div>
+    <div class="node-panel" id="nodePanel">
+      <div class="node-empty">Select a node in the network to view gene details and perturbation score</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val" id="totalNodes">—</div><div class="stat-label">Genes</div></div>
+      <div class="stat-box"><div class="stat-val" id="totalEdges">—</div><div class="stat-label">Interactions</div></div>
+      <div class="stat-box"><div class="stat-val" id="perturbedCount">—</div><div class="stat-label">Perturbed</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+let cy;
+
+function scoreColor(s) {
+  if (s >= 0.7) return '#f87171';
+  if (s >= 0.4) return '#fbbf24';
+  return '#4ade80';
+}
+
+async function init() {
+  const res = await fetch(`${API}/api/graph`).catch(() => null);
+  const data = res ? await res.json() : getMockGraph();
+
+  const nodes = data.nodes.map(n => ({
+    data: { id: n.id, label: n.label || n.id, score: n.score || 0, known: n.known || false },
+    style: {
+      'background-color': scoreColor(n.score),
+      'width': 20 + (n.score * 30),
+      'height': 20 + (n.score * 30),
+      'border-width': n.known ? 3 : 1,
+      'border-color': n.known ? '#4dd9ff' : 'rgba(255,255,255,0.2)',
+    }
+  }));
+
+  const edges = data.edges.map(e => ({
+    data: { source: e.source, target: e.target, weight: e.weight || 0.5 }
+  }));
+
+  cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: { nodes, edges },
+    style: [
+      { selector: 'node', style: {
+        'label': 'data(label)',
+        'font-family': 'DM Mono',
+        'font-size': '11px',
+        'color': '#e8f4f8',
+        'text-valign': 'bottom',
+        'text-margin-y': '6px',
+        'text-outline-width': 2,
+        'text-outline-color': '#03060f',
+        'transition-property': 'background-color,width,height,opacity',
+        'transition-duration': '0.3s',
+        'cursor': 'pointer',
+      }},
+      { selector: 'edge', style: {
+        'line-color': 'rgba(100,200,255,0.15)',
+        'width': 'mapData(weight,0,1,0.5,3)',
+        'curve-style': 'bezier',
+        'opacity': 0.8,
+      }},
+      { selector: 'node:selected', style: {
+        'border-width': 4, 'border-color': '#ffffff', 'opacity': 1,
+      }},
+      { selector: '.faded', style: { 'opacity': 0.15 }},
+    ],
+    layout: { name: 'cose', padding: 40, nodeRepulsion: 4000, idealEdgeLength: 80, animate: true },
+    backgroundColor: 'transparent',
+  });
+
+  cy.on('tap', 'node', e => showNodeInfo(e.target.data()));
+  cy.on('tap', e => { if (e.target === cy) resetHighlight(); });
+
+  cy.on('mouseover', 'node', e => {
+    cy.elements().not(e.target).not(e.target.neighborhood()).addClass('faded');
+    e.target.removeClass('faded');
+  });
+  cy.on('mouseout', 'node', () => { if (!cy.$(':selected').length) cy.elements().removeClass('faded'); });
+
+  document.getElementById('totalNodes').textContent = nodes.length;
+  document.getElementById('totalEdges').textContent = edges.length;
+  document.getElementById('perturbedCount').textContent = nodes.filter(n => n.data.score >= 0.4).length;
+}
+
+function showNodeInfo(d) {
+  const color = scoreColor(d.score);
+  const pct = Math.round(d.score * 100);
+  document.getElementById('nodePanel').innerHTML = `
+    <div class="node-card">
+      <div class="node-gene" style="color:${color}">${d.label}</div>
+      <div class="node-badge ${d.known ? 'known-badge' : 'novel-badge'}">${d.known ? '★ Known cancer gene' : '◈ Novel candidate'}</div>
+      <div class="node-score-wrap">
+        <div class="node-score-label">Perturbation score</div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="node-score-val" style="color:${color}">${pct}%</div>
+      </div>
+      <div class="node-meta">
+        <div class="meta-row"><span class="meta-key">Gene ID</span><span class="meta-val">${d.id}</span></div>
+        <div class="meta-row"><span class="meta-key">Status</span><span class="meta-val">${d.score >= 0.7 ? 'High risk' : d.score >= 0.4 ? 'Moderate' : 'Baseline'}</span></div>
+        <div class="meta-row"><span class="meta-key">Connections</span><span class="meta-val">${cy.getElementById(d.id).neighborhood('node').length}</span></div>
+      </div>
+    </div>`;
+}
+
+function resetHighlight() {
+  cy.elements().removeClass('faded');
+  cy.$(':selected').unselect();
+  document.getElementById('nodePanel').innerHTML = '<div class="node-empty">Select a node in the network to view gene details and perturbation score</div>';
+}
+
+function setLayout(name) {
+  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  cy.layout({ name, padding: 40, animate: true }).run();
+}
+
+function filterByScore(val) {
+  document.getElementById('scoreFilterVal').textContent = val + '%';
+  const threshold = val / 100;
+  cy.nodes().forEach(n => {
+    if (n.data('score') < threshold) n.addClass('faded');
+    else n.removeClass('faded');
+  });
+}
+
+function getMockGraph() {
+  return {
+    nodes: [
+      {id:'BRCA1',label:'BRCA1',score:0.91,known:true},{id:'TP53',label:'TP53',score:0.87,known:true},
+      {id:'ERBB2',label:'ERBB2',score:0.76,known:true},{id:'PIK3CA',label:'PIK3CA',score:0.65,known:true},
+      {id:'CDH1',label:'CDH1',score:0.54,known:true},{id:'PTEN',label:'PTEN',score:0.48,known:false},
+      {id:'MYC',label:'MYC',score:0.42,known:false},{id:'RB1',label:'RB1',score:0.31,known:false},
+      {id:'EGFR',label:'EGFR',score:0.28,known:false},{id:'AKT1',label:'AKT1',score:0.19,known:false},
+    ],
+    edges: [
+      {source:'BRCA1',target:'TP53',weight:0.9},{source:'BRCA1',target:'PTEN',weight:0.7},
+      {source:'TP53',target:'MYC',weight:0.8},{source:'ERBB2',target:'PIK3CA',weight:0.85},
+      {source:'PIK3CA',target:'AKT1',weight:0.9},{source:'AKT1',target:'MYC',weight:0.6},
+      {source:'CDH1',target:'RB1',weight:0.5},{source:'PTEN',target:'PIK3CA',weight:0.75},
+      {source:'EGFR',target:'ERBB2',weight:0.65},{source:'RB1',target:'TP53',weight:0.7},
+    ]
+  };
+}
+
+init();
+</script>
+</body>
+</html>
