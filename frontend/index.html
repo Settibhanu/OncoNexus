@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OncoTrace — Early Breast Cancer Detection</title>
+<title>OncoNexus — Early Breast Cancer Detection</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -41,9 +41,8 @@ body::before{
 /* ── nav ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(3,6,15,0.85);backdrop-filter:blur(20px)}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-mark{width:32px;height:32px;border:1.5px solid var(--cyan);border-radius:8px;display:grid;place-items:center;position:relative;overflow:hidden}
-.logo-mark::before{content:'';position:absolute;width:20px;height:1.5px;background:var(--cyan);transform:rotate(-35deg)}
-.logo-mark::after{content:'';position:absolute;width:20px;height:1.5px;background:var(--cyan);transform:rotate(35deg)}
+.logo-mark{width:32px;height:32px;display:grid;place-items:center;position:relative}
+.logo-mark img{width:100%;height:100%;object-fit:contain}
 .logo-name{font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:-0.3px;color:var(--text)}
 .logo-name span{color:var(--cyan)}
 .nav-links{display:flex;gap:28px;list-style:none}
@@ -138,14 +137,14 @@ input[type=file]{display:none}
 
 <nav>
   <a class="logo" href="index.html">
-    <div class="logo-mark"></div>
-    <span class="logo-name">Onco<span>Trace</span></span>
+    <div class="logo-mark"><img src="assets/logo.png" alt="OncoNexus"></div>
+    <span class="logo-name">Onco<span>Nexus</span></span>
   </a>
   <ul class="nav-links">
     <li><a href="network.html">Network</a></li>
     <li><a href="perturbation.html">Perturbation</a></li>
     <li><a href="biomarkers.html">Biomarkers</a></li>
-    <li><a href="simulation.html">Pipeline</a></li>
+    <li><a href="simulation_v2.html">Simulation</a></li>
   </ul>
   <div class="nav-badge">SDG 3 · Healthcare</div>
 </nav>
@@ -155,7 +154,7 @@ input[type=file]{display:none}
   <div class="hero-inner">
     <div class="hero-eyebrow">Next-Gen Healthcare · YESIST12 2026</div>
     <h1>Catch cancer<br><span class="accent">before it hides.</span></h1>
-    <p class="hero-sub">OncoTrace analyses biological network perturbations using Graph Neural Networks to detect early breast cancer signals invisible to conventional biomarker tests.</p>
+    <p class="hero-sub">OncoNexus analyses biological network perturbations using Graph Neural Networks to detect early breast cancer signals invisible to conventional biomarker tests.</p>
     <div class="hero-stats">
       <div class="stat"><div class="stat-val">~5K</div><div class="stat-label">Genes analysed</div></div>
       <div class="stat"><div class="stat-val">GNN</div><div class="stat-label">Self-supervised model</div></div>
@@ -223,7 +222,7 @@ input[type=file]{display:none}
 </section>
 
 <section class="features">
-  <div class="section-title">How OncoTrace works</div>
+  <div class="section-title">How OncoNexus works</div>
   <div class="section-sub">Six stages from raw genomic data to diagnostic insight</div>
   <div class="features-grid">
     <div class="feature-card">

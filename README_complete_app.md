@@ -1,4 +1,4 @@
-# OncoTrace — Integration Guide
+# OncoNexus — Integration Guide
 
 ## Project structure
 ```

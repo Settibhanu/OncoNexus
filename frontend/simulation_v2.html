@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OncoNexus — Live Analysis Simulation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #04080f;
+  --bg2: #080e1a;
+  --bg3: #0c1422;
+  --surface: #101828;
+  --surface2: #162035;
+  --border: rgba(99,160,255,0.12);
+  --border2: rgba(99,160,255,0.22);
+  --blue: #4d9fff;
+  --blue-dim: rgba(77,159,255,0.15);
+  --teal: #2de8b0;
+  --teal-dim: rgba(45,232,176,0.12);
+  --red: #ff4d6d;
+  --red-dim: rgba(255,77,109,0.15);
+  --amber: #ffb347;
+  --amber-dim: rgba(255,179,71,0.12);
+  --green: #4ade80;
+  --green-dim: rgba(74,222,128,0.12);
+  --text: #e2eaff;
+  --text2: #7a90bc;
+  --text3: #3d5480;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --display: 'Syne', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Starfield background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 20%, rgba(99,160,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 60%, rgba(45,232,176,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 15%, rgba(99,160,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 75%, rgba(45,232,176,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 85%, rgba(99,160,255,0.2) 0%, transparent 100%),
+    radial-gradient(600px 600px at 20% 30%, rgba(77,159,255,0.04) 0%, transparent 70%),
+    radial-gradient(800px 800px at 80% 70%, rgba(45,232,176,0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 100px 24px 60px; /* Increased for fixed nav */
+}
+
+/* ── nav ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(3,6,15,0.85);backdrop-filter:blur(20px)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:32px;height:32px;display:grid;place-items:center;position:relative}
+.logo-mark img{width:100%;height:100%;object-fit:contain}
+.logo-name{font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:-0.3px;color:var(--text)}
+.logo-name span{color:var(--blue)}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-badge{font-family:var(--mono);font-size:11px;padding:4px 10px;border:1px solid rgba(77,159,255,0.3);border-radius:99px;color:var(--blue)}
+
+@keyframes pulse-dot {
+  0%,100%{opacity:1} 50%{opacity:0.5}
+}
+
+/* Stage pipeline */
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  overflow-x: auto;
+}
+
+.stage-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.stage-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.stage-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg2);
+  transition: all 0.5s ease;
+  position: relative;
+}
+
+.stage-num.done {
+  border-color: var(--teal);
+  background: var(--teal-dim);
+  color: var(--teal);
+}
+.stage-num.done::after {
+  content: '✓';
+  font-size: 12px;
+}
+.stage-num.done span { display: none; }
+
+.stage-num.active {
+  border-color: var(--blue);
+  background: var(--blue-dim);
+  color: var(--blue);
+  box-shadow: 0 0 16px rgba(77,159,255,0.3);
+  animation: pulse-stage 1.5s ease-in-out infinite;
+}
+@keyframes pulse-stage { 0%,100%{box-shadow:0 0 16px rgba(77,159,255,0.3)} 50%{box-shadow:0 0 28px rgba(77,159,255,0.6)} }
+
+.stage-label {
+  font-size: 9px;
+  color: var(--text3);
+  text-align: center;
+  font-family: var(--mono);
+  max-width: 64px;
+  line-height: 1.3;
+  transition: color 0.5s;
+}
+.stage-label.active { color: var(--blue); }
+.stage-label.done { color: var(--teal); }
+
+.stage-connector {
+  width: 28px; height: 1px;
+  background: var(--border);
+  margin: 0 4px;
+  margin-bottom: 18px;
+  transition: background 0.5s;
+  flex-shrink: 0;
+}
+.stage-connector.done { background: var(--teal); opacity: 0.5; }
+
+/* Main content grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.panel-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text3);
+}
+
+/* NETWORK CANVAS */
+#network-canvas {
+  width: 100%;
+  height: 260px;
+  position: relative;
+}
+
+#net-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* LOSS CURVE */
+#loss-panel { grid-column: 2; }
+
+#loss-canvas-wrap {
+  position: relative;
+  height: 200px;
+}
+
+.loss-svg { width: 100%; height: 100%; }
+
+.loss-axis-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  fill: var(--text3);
+}
+
+.loss-grid-line { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 3 3; }
+
+.loss-curve-healthy { fill: none; stroke: var(--teal); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.loss-curve-cancer { fill: none; stroke: var(--red); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.loss-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+}
+.loss-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+}
+.ls-dot { width: 8px; height: 3px; border-radius: 2px; }
+
+/* PERTURBATION HEATMAP */
+#perturb-panel { grid-column: 1; }
+
+.gene-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gene-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.gene-bar-row.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.gene-name {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  width: 52px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.gene-bar-track {
+  flex: 1;
+  height: 14px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gene-bar-healthy {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--teal);
+  opacity: 0.25;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+
+.gene-bar-cancer {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 3px;
+  transition: width 1s cubic-bezier(0.16,1,0.3,1) 0.2s;
+}
+
+.gene-score {
+  font-family: var(--mono);
+  font-size: 10px;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* INTERPRETATION PANEL */
+#interp-panel {
+  grid-column: 1 / -1;
+  display: none;
+}
+
+.risk-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.risk-ring-wrap {
+  position: relative;
+  width: 100px; height: 100px;
+  flex-shrink: 0;
+}
+
+.risk-ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.risk-ring-bg { fill: none; stroke: var(--bg); stroke-width: 8; }
+.risk-ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 2s cubic-bezier(0.16,1,0.3,1); }
+
+.risk-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.risk-score-num {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.risk-score-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.risk-summary h2 {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.risk-summary p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+.findings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.finding-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.3s;
+}
+.finding-card:hover { border-color: var(--border2); }
+.finding-card.visible { opacity: 1; transform: translateY(0); }
+
+.finding-gene {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.fc-red .finding-gene { color: var(--red); }
+.fc-amber .finding-gene { color: var(--amber); }
+.fc-blue .finding-gene { color: var(--blue); }
+
+.finding-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+.fc-red .finding-badge { background: var(--red-dim); color: var(--red); }
+.fc-amber .finding-badge { background: var(--amber-dim); color: var(--amber); }
+.fc-blue .finding-badge { background: var(--blue-dim); color: var(--blue); }
+
+.finding-desc {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.finding-delta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+.finding-delta strong { color: var(--text); }
+
+/* SYSTEM LOG */
+#log-panel { grid-column: 2; }
+
+.log-lines {
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.8;
+  height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.log-line { display: flex; gap: 10px; }
+.log-time { color: var(--text3); flex-shrink: 0; }
+.log-msg { color: var(--text2); }
+.log-msg.info { color: var(--blue); }
+.log-msg.success { color: var(--teal); }
+.log-msg.warn { color: var(--amber); }
+.log-msg.error { color: var(--red); }
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue), var(--teal));
+  color: #fff;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+
+.speed-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.speed-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.speed-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+
+/* Progress bar */
+.progress-bar-wrap {
+  height: 2px;
+  background: var(--bg);
+  border-radius: 1px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--teal));
+  border-radius: 1px;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+/* Intro screen */
+#intro {
+  text-align: center;
+  padding: 60px 40px;
+}
+
+#intro h1 {
+  font-family: var(--display);
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--text) 40%, var(--teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+#intro p {
+  font-size: 16px;
+  color: var(--text2);
+  max-width: 520px;
+  margin: 0 auto 36px;
+  line-height: 1.7;
+}
+
+.sample-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 32px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.sample-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+
+#sim-wrap { display: none; }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <a class="logo" href="index.html">
+      <div class="logo-mark"><img src="assets/logo.png" alt="OncoNexus"></div>
+      <span class="logo-name">Onco<span>Nexus</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Upload</a></li>
+      <li><a href="network.html">Network</a></li>
+      <li><a href="perturbation.html">Perturbation</a></li>
+      <li><a href="biomarkers.html">Biomarkers</a></li>
+      <li><a href="simulation_v2.html" class="active">Simulation</a></li>
+    </ul>
+    <div class="status-badge" style="display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-family: var(--mono); font-size: 11px; color: var(--text2);">
+      <div class="status-dot" id="status-dot" style="width: 6px; height: 6px; border-radius: 50%; background: var(--text3); transition: background 0.4s, box-shadow 0.4s;"></div>
+      <span id="status-text">Ready</span>
+    </div>
+  </nav>
+
+  <!-- INTRO -->
+  <div id="intro">
+    <h1>Gene Network<br>Perturbation Analysis</h1>
+    <p>Watch how OncoNexus learns healthy gene interaction patterns, then detects where breast cancer disrupts the network — identifying biomarker candidates in real time.</p>
+    <div class="sample-tag">
+      <div class="sample-dot"></div>
+      Sample: TCGA-BRCA · Patient TCGA-A2-A0CM · Primary tumour · Infiltrating ductal carcinoma
+    </div>
+    <br>
+    <button class="btn btn-primary" onclick="startSim()" style="margin: 0 auto; display:inline-flex; font-size:15px; padding:14px 32px;">
+      ▶ &nbsp; Run Live Analysis
+    </button>
+  </div>
+
+  <!-- SIMULATION -->
+  <div id="sim-wrap">
+    <!-- Pipeline -->
+    <div class="pipeline" id="pipeline">
+      <div class="stage-item">
+        <div class="stage-node">
+          <div class="stage-num" id="sn0"><span>1</span></div>
+          <div class="stage-label" id="sl0">Data<br>Loading</div>
+        </div>
+      </div>
+      <div class="stage-connector" id="sc0"></div>
+      <div class="stage-item">
+        <div class="stage-node">
+          <div class="stage-num" id="sn1"><span>2</span></div>
+          <div class="stage-label" id="sl1">Network<br>Build</div>
+        </div>
+      </div>
+      <div class="stage-connector" id="sc1"></div>
+      <div class="stage-item">
+        <div class="stage-node">
+          <div class="stage-num" id="sn2"><span>3</span></div>
+          <div class="stage-label" id="sl2">GNN<br>Training</div>
+        </div>
+      </div>
+      <div class="stage-connector" id="sc2"></div>
+      <div class="stage-item">
+        <div class="stage-node">
+          <div class="stage-num" id="sn3"><span>4</span></div>
+          <div class="stage-label" id="sl3">Perturbation<br>Detection</div>
+        </div>
+      </div>
+      <div class="stage-connector" id="sc3"></div>
+      <div class="stage-item">
+        <div class="stage-node">
+          <div class="stage-num" id="sn4"><span>5</span></div>
+          <div class="stage-label" id="sl4">Biomarker<br>Ranking</div>
+        </div>
+      </div>
+      <div class="stage-connector" id="sc4"></div>
+      <div class="stage-item">
+        <div class="stage-node">
+          <div class="stage-num" id="sn5"><span>6</span></div>
+          <div class="stage-label" id="sl5">Clinical<br>Report</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-grid" id="content-grid">
+
+      <!-- NETWORK -->
+      <div class="panel" id="network-panel" style="grid-row: 1;">
+        <div class="panel-header">
+          <div class="panel-title">Gene Interaction Network</div>
+          <div class="panel-tag" id="net-tag">Building...</div>
+        </div>
+        <div id="network-canvas">
+          <svg id="net-svg" viewBox="0 0 380 260"></svg>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="net-progress"></div></div>
+      </div>
+
+      <!-- LOSS CURVE -->
+      <div class="panel" id="loss-panel" style="grid-row: 1;">
+        <div class="panel-header">
+          <div class="panel-title">GNN Training — Loss Curve</div>
+          <div class="panel-tag" id="loss-tag">Waiting</div>
+        </div>
+        <div id="loss-canvas-wrap">
+          <svg class="loss-svg" id="loss-svg" viewBox="0 0 340 200"></svg>
+        </div>
+        <div class="loss-stats">
+          <div class="loss-stat"><div class="ls-dot" style="background:var(--teal)"></div>Healthy baseline</div>
+          <div class="loss-stat"><div class="ls-dot" style="background:var(--red)"></div>Cancer reconstruction</div>
+          <div class="loss-stat" style="margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--text2)">Epoch: <span id="epoch-num" style="color:var(--blue)">—</span></div>
+        </div>
+      </div>
+
+      <!-- PERTURBATION -->
+      <div class="panel" id="perturb-panel" style="grid-row: 2;">
+        <div class="panel-header">
+          <div class="panel-title">Perturbation Score — Top Genes</div>
+          <div class="panel-tag" id="perturb-tag">Awaiting detection</div>
+        </div>
+        <div class="gene-bars" id="gene-bars-container">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="panel" id="log-panel" style="grid-row: 2;">
+        <div class="panel-header">
+          <div class="panel-title">System Log</div>
+          <div class="panel-tag">Live</div>
+        </div>
+        <div class="log-lines" id="log-lines"></div>
+      </div>
+
+      <!-- INTERPRETATION (hidden initially) -->
+      <div class="panel" id="interp-panel">
+        <div class="panel-header">
+          <div class="panel-title">Clinical Interpretation</div>
+          <div class="panel-tag" style="background:var(--red-dim);border-color:var(--red);color:var(--red)">High Risk Detected</div>
+        </div>
+        <div class="risk-header">
+          <div class="risk-ring-wrap">
+            <svg class="risk-ring-svg" viewBox="0 0 100 100">
+              <circle class="risk-ring-bg" cx="50" cy="50" r="38"/>
+              <circle class="risk-ring-fill" id="risk-ring-fill" cx="50" cy="50" r="38"
+                stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke="var(--red)"/>
+            </svg>
+            <div class="risk-ring-center">
+              <div class="risk-score-num" style="color:var(--red)" id="risk-score-num">0</div>
+              <div class="risk-score-label">Risk score</div>
+            </div>
+          </div>
+          <div class="risk-summary">
+            <h2>Significant network disruption detected across 3 oncogenic pathways</h2>
+            <p>The GNN trained on 847 healthy GTEx samples detected reconstruction errors 4.8× above baseline in the TP53 tumour suppressor pathway. <strong style="color:var(--text)">Key finding: the model independently identified BRCA1, TP53, and PIK3CA as top perturbed nodes — all three are established breast cancer driver genes.</strong> This validates the model's perturbation signal without prior cancer labelling.</p>
+          </div>
+        </div>
+        <div class="findings-grid" id="findings-grid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-ghost" onclick="resetSim()">↺ &nbsp; Reset</button>
+      <div id="overall-progress" style="flex:1; font-family:var(--mono); font-size:11px; color:var(--text3)"></div>
+      <div class="speed-wrap">
+        Speed:
+        <button class="speed-btn active" onclick="setSpeed(1, this)">1×</button>
+        <button class="speed-btn" onclick="setSpeed(2, this)">2×</button>
+        <button class="speed-btn" onclick="setSpeed(4, this)">4×</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIGURATION =====
+let SPEED = 1;
+let simTimer = null;
+let simRunning = false;
+
+const GENES = [
+  { name:'TP53',   healthy:0.12, cancer:0.91, color:'#ff4d6d', pathway:'Tumour suppressor', known:true,  desc:'Primary guardian of the genome. Prevents uncontrolled cell division.', delta:'4.2×' },
+  { name:'BRCA1',  healthy:0.10, cancer:0.84, color:'#ff4d6d', pathway:'DNA repair',        known:true,  desc:'DNA damage repair. Mutations cause hereditary breast cancer.', delta:'3.9×' },
+  { name:'PIK3CA', healthy:0.14, cancer:0.79, color:'#ff6b35', pathway:'PI3K/AKT',          known:true,  desc:'Activates cell growth signals. Most commonly mutated oncogene in breast cancer.', delta:'3.4×' },
+  { name:'PTEN',   healthy:0.11, cancer:0.72, color:'#ff6b35', pathway:'Tumour suppressor', known:true,  desc:'Inhibits PI3K pathway. Lost in 25-30% of breast cancers.', delta:'3.1×' },
+  { name:'MYC',    healthy:0.16, cancer:0.65, color:'#ffb347', pathway:'Transcription',     known:true,  desc:'Master transcription regulator. Amplified in aggressive subtypes.', delta:'2.8×' },
+  { name:'CDH1',   healthy:0.13, cancer:0.58, color:'#ffb347', pathway:'Cell adhesion',     known:false, desc:'E-cadherin — controls cell-cell adhesion. Loss drives metastasis.', delta:'2.5×' },
+  { name:'RB1',    healthy:0.15, cancer:0.51, color:'#4d9fff', pathway:'Cell cycle',        known:false, desc:'Retinoblastoma protein — brake on cell cycle progression.', delta:'2.1×' },
+  { name:'ERBB2',  healthy:0.18, cancer:0.46, color:'#4d9fff', pathway:'Growth factor',     known:true,  desc:'HER2 receptor. Amplified in 15-20% of breast cancers.', delta:'1.9×' },
+];
+
+// ===== NETWORK NODES =====
+const NODES = [
+  {id:0,x:190,y:130,r:10,gene:'TP53',main:true},
+  {id:1,x:120,y:80,r:8,gene:'BRCA1',main:true},
+  {id:2,x:260,y:80,r:8,gene:'PIK3CA',main:true},
+  {id:3,x:80,y:160,r:7,gene:'PTEN',main:true},
+  {id:4,x:300,y:160,r:7,gene:'MYC',main:true},
+  {id:5,x:155,y:200,r:6,gene:'CDH1',main:false},
+  {id:6,x:225,y:200,r:6,gene:'RB1',main:false},
+  {id:7,x:130,y:135,r:5,gene:'ATM',main:false},
+  {id:8,x:248,y:135,r:5,gene:'ERBB2',main:false},
+  {id:9,x:190,y:60,r:5,gene:'MDM2',main:false},
+  {id:10,x:60,y:110,r:4,gene:'CHEK2',main:false},
+  {id:11,x:320,y:110,r:4,gene:'AKT1',main:false},
+  {id:12,x:70,y:210,r:4,gene:'CASP3',main:false},
+  {id:13,x:310,y:210,r:4,gene:'CCND1',main:false},
+];
+
+const EDGES = [
+  [0,1],[0,2],[0,3],[0,4],[0,9],[0,7],
+  [1,7],[1,10],[1,3],[2,4],[2,8],[2,11],
+  [3,11],[4,13],[5,6],[5,0],[6,0],[7,1],
+  [8,2],[9,0],[10,1],[11,2],[12,3],[13,4],
+];
+
+// ===== STATE =====
+let nodeStates = NODES.map(() => ({ visible: false, perturbed: false, score: 0 }));
+let lossData = { healthy: [], cancer: [] };
+let logLines = [];
+let currentStage = -1;
+
+function t(ms) { return ms / SPEED; }
+
+// ===== LOG =====
+function log(msg, type='') {
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  logLines.push({ time, msg, type });
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('log-lines');
+  el.innerHTML = logLines.slice(-40).map(l =>
+    `<div class="log-line"><span class="log-time">${l.time}</span><span class="log-msg ${l.type}">${l.msg}</span></div>`
+  ).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ===== PIPELINE =====
+function setStage(i) {
+  currentStage = i;
+  for (let j = 0; j < 6; j++) {
+    const sn = document.getElementById('sn'+j);
+    const sl = document.getElementById('sl'+j);
+    const sc = document.getElementById('sc'+j);
+    sn.className = 'stage-num' + (j < i ? ' done' : j === i ? ' active' : '');
+    sl.className = 'stage-label' + (j < i ? ' done' : j === i ? ' active' : '');
+    if (sc) sc.className = 'stage-connector' + (j < i ? ' done' : '');
+  }
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot active';
+  document.getElementById('status-text').textContent = ['Loading data','Building network','Training GNN','Detecting perturbations','Ranking biomarkers','Generating report'][i] || 'Complete';
+}
+
+function setProgress(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = pct + '%';
+}
+
+// ===== NETWORK DRAWING =====
+function initNetwork() {
+  const svg = document.getElementById('net-svg');
+  svg.innerHTML = '';
+
+  // Draw edges (hidden initially)
+  EDGES.forEach(([a,b], i) => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', NODES[a].x);
+    line.setAttribute('y1', NODES[a].y);
+    line.setAttribute('x2', NODES[b].x);
+    line.setAttribute('y2', NODES[b].y);
+    line.setAttribute('stroke', 'rgba(99,160,255,0.15)');
+    line.setAttribute('stroke-width', '1');
+    line.setAttribute('id', `edge-${i}`);
+    line.setAttribute('opacity', '0');
+    svg.appendChild(line);
+  });
+
+  // Draw nodes
+  NODES.forEach((n, i) => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id', `node-${i}`);
+    g.setAttribute('opacity', '0');
+    g.setAttribute('transform', `translate(0,0)`);
+    g.style.transition = 'opacity 0.4s ease';
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', n.x);
+    circle.setAttribute('cy', n.y);
+    circle.setAttribute('r', n.r);
+    circle.setAttribute('fill', 'rgba(77,159,255,0.2)');
+    circle.setAttribute('stroke', 'rgba(77,159,255,0.5)');
+    circle.setAttribute('stroke-width', '1');
+    circle.setAttribute('id', `circle-${i}`);
+    circle.style.transition = 'fill 1s ease, stroke 1s ease, r 0.6s ease';
+
+    g.appendChild(circle);
+
+    if (n.main) {
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', n.x);
+      text.setAttribute('y', n.y + n.r + 9);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-size', '7');
+      text.setAttribute('fill', 'rgba(122,144,188,0.8)');
+      text.setAttribute('font-family', 'IBM Plex Mono, monospace');
+      text.textContent = n.gene;
+      g.appendChild(text);
+    }
+
+    svg.appendChild(g);
+  });
+}
+
+function showNode(i, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const g = document.getElementById(`node-${i}`);
+      if (g) g.setAttribute('opacity', '1');
+      resolve();
+    }, delay);
+  });
+}
+
+function showEdge(i, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const el = document.getElementById(`edge-${i}`);
+      if (el) {
+        el.setAttribute('opacity', '1');
+        el.style.transition = 'opacity 0.3s ease';
+      }
+      resolve();
+    }, delay);
+  });
+}
+
+function perturbNode(nodeIdx, score, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const circle = document.getElementById(`circle-${nodeIdx}`);
+      if (!circle) { resolve(); return; }
+      const gene = GENES.find(g => g.name === NODES[nodeIdx].gene);
+      const color = gene ? gene.color : '#ff4d6d';
+      const intensity = score;
+      circle.setAttribute('fill', `${color}${Math.round(intensity * 40).toString(16).padStart(2,'0')}`);
+      circle.setAttribute('stroke', color);
+      circle.setAttribute('stroke-width', String(1 + intensity * 2.5));
+
+      // Ripple effect
+      const svg = document.getElementById('net-svg');
+      const ripple = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      ripple.setAttribute('cx', NODES[nodeIdx].x);
+      ripple.setAttribute('cy', NODES[nodeIdx].y);
+      ripple.setAttribute('r', NODES[nodeIdx].r);
+      ripple.setAttribute('fill', 'none');
+      ripple.setAttribute('stroke', color);
+      ripple.setAttribute('stroke-width', '1');
+      ripple.setAttribute('opacity', '0.7');
+      ripple.style.transition = 'r 0.8s ease-out, opacity 0.8s ease-out';
+      svg.appendChild(ripple);
+
+      setTimeout(() => {
+        ripple.setAttribute('r', String(NODES[nodeIdx].r * 3));
+        ripple.setAttribute('opacity', '0');
+        setTimeout(() => { try { svg.removeChild(ripple); } catch(e){} }, 900);
+      }, 50);
+
+      resolve();
+    }, delay);
+  });
+}
+
+// ===== LOSS CURVE =====
+function initLossSVG() {
+  const svg = document.getElementById('loss-svg');
+  svg.innerHTML = '';
+
+  const pad = { top: 14, right: 20, bottom: 28, left: 36 };
+  const W = 340 - pad.left - pad.right;
+  const H = 200 - pad.top - pad.bottom;
+
+  // Grid
+  [0.25, 0.5, 0.75, 1].forEach(t => {
+    const y = pad.top + H * (1 - t) / 1;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', pad.left); line.setAttribute('y1', y);
+    line.setAttribute('x2', pad.left + W); line.setAttribute('y2', y);
+    line.setAttribute('class', 'loss-grid-line');
+    svg.appendChild(line);
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', pad.left - 4); label.setAttribute('y', y + 3);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'loss-axis-label');
+    label.textContent = t.toFixed(2);
+    svg.appendChild(label);
+  });
+
+  // Axis labels
+  ['0', '25', '50', '75', '100'].forEach((v, i) => {
+    const x = pad.left + (i / 4) * W;
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', x); label.setAttribute('y', pad.top + H + 16);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'loss-axis-label');
+    label.textContent = v;
+    svg.appendChild(label);
+  });
+
+  const xlabel = document.createElementNS('http://www.w3.org/2000/svg','text');
+  xlabel.setAttribute('x', pad.left + W/2); xlabel.setAttribute('y', pad.top + H + 26);
+  xlabel.setAttribute('text-anchor','middle');
+  xlabel.setAttribute('class','loss-axis-label');
+  xlabel.textContent = 'Training epoch';
+  svg.appendChild(xlabel);
+
+  // Paths
+  const healthyPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  healthyPath.setAttribute('id','loss-path-healthy');
+  healthyPath.setAttribute('class','loss-curve-healthy');
+  healthyPath.setAttribute('d','');
+  svg.appendChild(healthyPath);
+
+  const cancerPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  cancerPath.setAttribute('id','loss-path-cancer');
+  cancerPath.setAttribute('class','loss-curve-cancer');
+  cancerPath.setAttribute('d','');
+  svg.appendChild(cancerPath);
+
+  return { pad, W, H };
+}
+
+let lossConfig = null;
+
+function updateLossCurve() {
+  if (!lossConfig) return;
+  const { pad, W, H } = lossConfig;
+  const maxEp = 100;
+
+  function makePath(data) {
+    if (data.length < 2) return '';
+    return 'M ' + data.map((v, i) => {
+      const x = pad.left + (i / (maxEp - 1)) * W;
+      const y = pad.top + H * (1 - Math.min(v, 1));
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' L ');
+  }
+
+  document.getElementById('loss-path-healthy').setAttribute('d', makePath(lossData.healthy));
+  document.getElementById('loss-path-cancer').setAttribute('d', makePath(lossData.cancer));
+}
+
+// Loss generation
+function lossHealthy(ep) {
+  // Smooth exponential decay with noise
+  const base = 0.85 * Math.exp(-ep / 22) + 0.05;
+  const noise = (Math.random() - 0.5) * 0.015;
+  return Math.max(0.04, base + noise);
+}
+
+function lossCancer(ep) {
+  // Higher plateau — doesn't reconstruct as well
+  const base = 0.88 * Math.exp(-ep / 30) + 0.28;
+  const noise = (Math.random() - 0.5) * 0.02;
+  return Math.max(0.26, base + noise);
+}
+
+// ===== BIOMARKER BARS =====
+function initGeneBars() {
+  const container = document.getElementById('gene-bars-container');
+  container.innerHTML = GENES.map((g, i) => `
+    <div class="gene-bar-row" id="gene-row-${i}">
+      <div class="gene-name">${g.name}</div>
+      <div class="gene-bar-track">
+        <div class="gene-bar-healthy" id="bar-healthy-${i}" style="width:0%"></div>
+        <div class="gene-bar-cancer" id="bar-cancer-${i}" style="width:0%; background:${g.color}; opacity:0.7"></div>
+      </div>
+      <div class="gene-score" id="bar-score-${i}" style="color:${g.color}">—</div>
+    </div>
+  `).join('');
+}
+
+function showGeneBar(i, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const row = document.getElementById(`gene-row-${i}`);
+      if (row) row.classList.add('visible');
+      setTimeout(() => {
+        const g = GENES[i];
+        const bh = document.getElementById(`bar-healthy-${i}`);
+        const bc = document.getElementById(`bar-cancer-${i}`);
+        const bs = document.getElementById(`bar-score-${i}`);
+        if (bh) bh.style.width = (g.healthy * 100) + '%';
+        if (bc) bc.style.width = (g.cancer * 100) + '%';
+        if (bs) bs.textContent = g.cancer.toFixed(2);
+        resolve();
+      }, 200);
+    }, delay);
+  });
+}
+
+// ===== INTERPRETATION PANEL =====
+function buildFindings() {
+  const grid = document.getElementById('findings-grid');
+  const topGenes = GENES.slice(0, 6);
+  const colorClass = (i) => i < 2 ? 'fc-red' : i < 4 ? 'fc-amber' : 'fc-blue';
+
+  grid.innerHTML = topGenes.map((g, i) => `
+    <div class="finding-card ${colorClass(i)}" id="find-${i}">
+      <div class="finding-gene">${g.name}</div>
+      <div class="finding-badge">${g.known ? '✓ Known driver' : '◆ Novel candidate'} · ${g.pathway}</div>
+      <div class="finding-desc">${g.desc}</div>
+      <div class="finding-delta">Perturbation: <strong>${g.delta} above healthy baseline</strong></div>
+    </div>
+  `).join('');
+}
+
+function showFindingCards() {
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => {
+      const el = document.getElementById(`find-${i}`);
+      if (el) el.classList.add('visible');
+    }, i * 150);
+  }
+}
+
+function animateRiskScore(target) {
+  const fill = document.getElementById('risk-ring-fill');
+  const num = document.getElementById('risk-score-num');
+  const circumference = 238.76;
+  let current = 0;
+  const duration = 2000;
+  const start = Date.now();
+
+  const tick = () => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    current = Math.round(target * ease);
+    num.textContent = current;
+    const offset = circumference * (1 - (current / 100));
+    fill.setAttribute('stroke-dashoffset', offset);
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+// ===== MAIN SIM =====
+function sleep(ms) {
+  return new Promise(resolve => { simTimer = setTimeout(resolve, t(ms)); });
+}
+
+async function startSim() {
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('sim-wrap').style.display = 'block';
+
+  document.getElementById('status-dot').className = 'status-dot active';
+  simRunning = true;
+
+  initNetwork();
+  lossConfig = initLossSVG();
+  initGeneBars();
+  buildFindings();
+
+  // ===== STAGE 0: Data Loading =====
+  setStage(0);
+  log('Initializing OncoNexus pipeline v2.1.0', 'info');
+  log('Loading TCGA-BRCA expression matrix...');
+  await sleep(500);
+  log('Samples: 847 healthy (GTEx) + 1 cancer (TCGA-A2-A0CM)');
+  setProgress('net-progress', 20);
+  await sleep(400);
+  log('Gene IDs aligned to Ensembl GRCh38');
+  setProgress('net-progress', 45);
+  await sleep(400);
+  log('Normalisation: log2(TPM+1) applied');
+  setProgress('net-progress', 70);
+  await sleep(300);
+  log('STRING DB interactions loaded: 44 edges', 'success');
+  setProgress('net-progress', 100);
+  await sleep(300);
+
+  // ===== STAGE 1: Network Build =====
+  setStage(1);
+  document.getElementById('net-tag').textContent = 'Building nodes...';
+  log('Constructing protein-protein interaction network...', 'info');
+
+  // Show nodes with stagger
+  for (let i = 0; i < NODES.length; i++) {
+    await showNode(i, 0);
+    await sleep(80);
+    setProgress('net-progress', (i / NODES.length) * 100);
+  }
+
+  document.getElementById('net-tag').textContent = 'Adding edges...';
+  log(`Nodes placed: ${NODES.length} genes`);
+
+  // Show edges
+  for (let i = 0; i < EDGES.length; i++) {
+    await showEdge(i, 0);
+    await sleep(40);
+  }
+
+  log(`Network complete: ${NODES.length} nodes, ${EDGES.length} edges`, 'success');
+  document.getElementById('net-tag').textContent = `${NODES.length} nodes · ${EDGES.length} edges`;
+  await sleep(600);
+
+  // ===== STAGE 2: GNN Training =====
+  setStage(2);
+  document.getElementById('loss-tag').textContent = 'Training...';
+  log('Starting GNN training on healthy baseline (847 samples)...', 'info');
+  log('Architecture: Graph Autoencoder · 3 GraphSAGE layers · dim=128');
+
+  const totalEpochs = 100;
+  const updateInterval = t(60);
+  let lastEpoch = 0;
+
+  for (let ep = 1; ep <= totalEpochs; ep++) {
+    lossData.healthy.push(lossHealthy(ep));
+    lossData.cancer.push(lossCancer(ep));
+    document.getElementById('epoch-num').textContent = ep;
+    setProgress('net-progress', (ep / totalEpochs) * 100);
+
+    updateLossCurve();
+
+    if (ep % 10 === 0) {
+      const hl = lossData.healthy[lossData.healthy.length-1];
+      const cl = lossData.cancer[lossData.cancer.length-1];
+      log(`Epoch ${ep}/100 — Healthy loss: ${hl.toFixed(4)} | Cancer loss: ${cl.toFixed(4)}`, ep === 100 ? 'success' : '');
+    }
+
+    await sleep(60);
+  }
+
+  const finalHL = lossData.healthy[lossData.healthy.length-1];
+  const finalCL = lossData.cancer[lossData.cancer.length-1];
+  document.getElementById('loss-tag').textContent = `Converged · Δ ${(finalCL - finalHL).toFixed(3)}`;
+  log(`Training complete. Healthy final: ${finalHL.toFixed(4)} | Cancer: ${finalCL.toFixed(4)}`, 'success');
+  log(`Reconstruction error gap: ${(finalCL/finalHL).toFixed(1)}× — perturbation signal detected`, 'warn');
+  await sleep(500);
+
+  // ===== STAGE 3: Perturbation Detection =====
+  setStage(3);
+  document.getElementById('perturb-tag').textContent = 'Scanning...';
+  log('Running cancer sample through trained model...', 'info');
+  log('Computing per-node reconstruction error...');
+  await sleep(400);
+
+  // Perturb nodes in order of severity
+  const perturbOrder = [0, 1, 2, 3, 4, 5, 6, 7, 8]; // TP53 first
+  const geneNodeMap = {TP53:0, BRCA1:1, PIK3CA:2, PTEN:3, MYC:4, CDH1:5, RB1:6, ATM:7, ERBB2:8};
+
+  for (const gidx of perturbOrder) {
+    const gene = GENES[gidx];
+    if (!gene) continue;
+    const nodeIdx = geneNodeMap[gene.name];
+    if (nodeIdx === undefined) continue;
+    log(`[DETECTION] ${gene.name}: score ${gene.cancer.toFixed(3)} — ${gene.cancer > 0.7 ? '⚠ HIGH perturbation' : gene.cancer > 0.5 ? 'MODERATE perturbation' : 'LOW perturbation'}`,
+      gene.cancer > 0.7 ? 'error' : gene.cancer > 0.5 ? 'warn' : '');
+    await perturbNode(nodeIdx, gene.cancer, 0);
+    await showGeneBar(gidx, 0);
+    await sleep(280);
+  }
+
+  document.getElementById('perturb-tag').textContent = '8 genes flagged';
+  log('Perturbation scan complete', 'success');
+  log('High-confidence hits: TP53, BRCA1, PIK3CA, PTEN', 'warn');
+  await sleep(500);
+
+  // ===== STAGE 4: Ranking =====
+  setStage(4);
+  log('Ranking biomarker candidates by perturbation score...', 'info');
+  await sleep(400);
+
+  // Show remaining bars
+  for (let i = perturbOrder.length; i < GENES.length; i++) {
+    await showGeneBar(i, 0);
+    await sleep(100);
+  }
+
+  log('Cross-referencing against COSMIC cancer gene census...', 'success');
+  await sleep(300);
+  log('Known drivers confirmed: TP53, BRCA1, PIK3CA, PTEN, MYC, ERBB2', 'success');
+  log('Novel candidates flagged: CDH1, RB1 — require literature review', 'warn');
+  await sleep(400);
+
+  // ===== STAGE 5: Report =====
+  setStage(5);
+  log('Generating clinical interpretation report...', 'info');
+  await sleep(600);
+  log('Risk stratification: HIGH (score 0.87/1.00)', 'error');
+  log('Report ready — 3 oncogenic pathways disrupted', 'success');
+  await sleep(400);
+
+  // Show interpretation panel
+  const interp = document.getElementById('interp-panel');
+  interp.style.display = 'block';
+  interp.style.opacity = '0';
+  interp.style.transition = 'opacity 0.8s ease';
+  setTimeout(() => { interp.style.opacity = '1'; }, 50);
+
+  animateRiskScore(87);
+  setTimeout(showFindingCards, 800);
+
+  document.getElementById('status-dot').className = 'status-dot';
+  document.getElementById('status-text').textContent = 'Analysis complete';
+  document.getElementById('status-dot').style.background = 'var(--teal)';
+  document.getElementById('status-dot').style.boxShadow = '0 0 8px var(--teal)';
+
+  // Mark all stages done
+  for (let j = 0; j < 6; j++) {
+    document.getElementById('sn'+j).className = 'stage-num done';
+    document.getElementById('sl'+j).className = 'stage-label done';
+    const sc = document.getElementById('sc'+j);
+    if (sc) sc.className = 'stage-connector done';
+  }
+
+  document.getElementById('overall-progress').textContent = 'Analysis complete · 8 genes ranked · 6 pathway disruptions identified';
+  simRunning = false;
+}
+
+function resetSim() {
+  if (simTimer) clearTimeout(simTimer);
+  simRunning = false;
+  lossData = { healthy: [], cancer: [] };
+  logLines = [];
+  nodeStates = NODES.map(() => ({ visible: false, perturbed: false, score: 0 }));
+
+  document.getElementById('intro').style.display = 'block';
+  document.getElementById('sim-wrap').style.display = 'none';
+  document.getElementById('interp-panel').style.display = 'none';
+  document.getElementById('status-dot').className = 'status-dot';
+  document.getElementById('status-dot').style.background = '';
+  document.getElementById('status-dot').style.boxShadow = '';
+  document.getElementById('status-text').textContent = 'Ready';
+  document.getElementById('overall-progress').textContent = '';
+}
+
+function setSpeed(s, btn) {
+  SPEED = s;
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

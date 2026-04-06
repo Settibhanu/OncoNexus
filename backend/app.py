@@ -146,8 +146,16 @@ def predict():
         if model is None or edge_index_cache is None:
             return jsonify({'error': 'System not fully initialized'}), 500
         
+        # Determine gene count (excluding logic column if any)
+        genes_in_file = [c for c in df.columns if c != 'sample_id']
+        
         # Run optimized inference
         results = run_inference(df, model, genes_cache, edge_index_cache, device=device)
+        
+        # Add metadata for the new UI
+        results['sample_count'] = len(df)
+        results['gene_count'] = len(genes_in_file)
+        
         return jsonify(results)
 
     except Exception as e:
