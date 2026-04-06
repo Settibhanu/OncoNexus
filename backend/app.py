@@ -31,7 +31,15 @@ def load_app_data():
         try:
             model = OncoGNN(in_channels=1, hidden_channels=256, out_channels=128)
             state_dict = torch.load(MODEL_PATH, map_location=device)
-            model.load_state_dict(state_dict)
+            try:
+                model.load_state_dict(state_dict)
+            except RuntimeError:
+                # Fallback: Many training scripts only save the DGI module's state dict
+                if 'weight' in state_dict and 'encoder.conv1.att' in state_dict:
+                    model.dgi.load_state_dict(state_dict)
+                    print("[*] Loaded weights via dgi sub-module.")
+                else:
+                    raise
             model.to(device)
             model.eval()
             print(f"[*] OncoGNN model loaded.")

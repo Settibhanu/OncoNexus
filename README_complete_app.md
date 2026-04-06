@@ -1,4 +1,17 @@
-# OncoNexus — Integration Guide
+# OncoNexus — Integration Guide (v1.0.2)
+### Biological Network Perturbation Analysis System for Breast Cancer Discovery
+
+## 📊 Model Accuracy Evaluation (New)
+To verify the scientific validity of the OncoNexus GNN model, you can run the built-in evaluation suite. This compares the model's performance against the **COSMIC/TCGA Consolidated Driver List** (the gold standard for breast cancer research).
+
+**Usage:**
+```bash
+python backend/evaluate.py
+```
+
+**What the metrics mean:**
+1.  **Link Reconstruction AUC/AP**: Measures how well the AI has learned to "predict" human biology by reconstructing the Protein-Protein Interaction (PPI) graph. A score > 0.85 indicates strong learning.
+2.  **Clinical Precision @ 20**: Measures how many of the top 20 biomarkers predicted by OncoNexus are established cancer driver genes. This is the ultimate "real-world" accuracy check.
 
 ## Project structure
 ```
