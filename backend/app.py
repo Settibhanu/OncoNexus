@@ -193,5 +193,6 @@ def predict():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # When running normally (not via load_app_data call in module import)
-    app.run(debug=True, port=5000)
+    # Hugging Face Spaces and other platforms use the PORT environment variable
+    port = int(os.environ.get('PORT', 7860))
+    app.run(host='0.0.0.0', port=port, debug=False)

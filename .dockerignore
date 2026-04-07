@@ -1,0 +1,38 @@
+# Python and development artifacts
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# System and local environment
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+*.bak
+*.old
+
+# Large local data or logs
+logs/
+backend/__pycache__/
+backend/data/*.csv
+!backend/data/biomarker_rankings.csv
+backend/data/tcga_brca_REAL_sample.csv
+evaluate.py
+README_complete_app.md
+node_modules/
