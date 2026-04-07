@@ -5,10 +5,7 @@ import json
 import os
 import torch
 import numpy as np
-try:
-    from backend.pipeline import OncoGNN, run_inference
-except ImportError:
-    from pipeline import OncoGNN, run_inference
+from pipeline import OncoGNN, run_inference
 
 app = Flask(__name__, static_folder='../frontend')
 CORS(app)
