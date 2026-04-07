@@ -1,7 +1,8 @@
 flask>=3.0.0
 flask-cors>=4.0.0
-torch>=2.5.1
-torch-geometric>=2.6.0
+gunicorn>=21.2.0
+torch>=2.2.0 --index-url https://download.pytorch.org/whl/cpu
+torch-geometric>=2.5.0
 networkx>=3.0
 pandas>=2.1.0
 numpy>=1.24.0
